@@ -5,18 +5,18 @@ print os.environ['HOME']
 sys.path.append(os.environ['HOME'] + '/core')
 
 import pywikibot
+import mwparserfromhell
 import MySQLdb
 import re
 import math
 import string
 import unicodedata
-#import htmlentitydefs
 import urllib
 import viutil
 
 from urllib import FancyURLopener
-#from PHPUnserialize import *
     
+
 class VICbot:
 
   def __init__(self, debug):
@@ -113,6 +113,8 @@ class VICbot:
 
     #sys.exit(0);
 
+
+
     #
     # now fetch potential candidate pages
     #
@@ -120,7 +122,6 @@ class VICbot:
     try:
       connection = MySQLdb.connect(host="commonswiki.labsdb", db="commonswiki_p", read_default_file="~/replica.my.cnf" )
       cursor = connection.cursor() 
-      #cursor.execute( "select /* SLOW OK */ page_title, GROUP_CONCAT( DISTINCT cl_to SEPARATOR '|') from revision, page left join categorylinks on page_id = cl_from  where page_latest=rev_id and page_title like 'Valued_image_candidates/%' and page_namespace=4 and ( TO_DAYS(rev_timestamp) - TO_DAYS(CURRENT_DATE) ) > -5 group by page_id" )
       cursor.execute( "select /* SLOW_OK */ page_title, GROUP_CONCAT( DISTINCT cl_to SEPARATOR '|') from revision, page left join categorylinks on page_id = cl_from  where page_latest=rev_id and page_title like 'Valued_image_candidates/%' and page_namespace=4 and ( TO_DAYS(CURRENT_DATE) - TO_DAYS(rev_timestamp) ) < 25 group by page_id" )
     except MySQLdb.OperationalError, message: 
       errorMessage = "Error %d:\n%s" % (message[ 0 ], message[ 1 ] ) 
@@ -199,7 +200,7 @@ class VICbot:
         continue
 
       #
-      # extract parameters
+      # extract parameters TODO: use mwparserfromhell
       #
     
       subpage = ''
@@ -282,6 +283,8 @@ class VICbot:
         
     #sys.exit(0)
     
+
+
     #
     # Alphabetical scope list (this is alway executed as the list might have been edited manually)
     #
@@ -346,7 +349,7 @@ class VICbot:
           if uline.lstrip("| ").replace( ' ', '_' ) == remove.replace( ' ', '_' ) :
             keepLine = False
             print "remove %s" % line.encode("utf-8")
-            print "  matched %s and %s" % ( uline.replace( ' ', '_' ).encode("utf-8") , remove.replace( ' ', '_' ).encode("utf-8") )
+            print "  matched '%s' and '%s'" % ( uline.replace( ' ', '_' ).encode("utf-8") , remove.replace( ' ', '_' ).encode("utf-8") )
             continue
   
         if keepLine :
@@ -398,6 +401,8 @@ class VICbot:
     
     pywikibot.setAction("Notify user of promoted Valued Image(s)")
     for key in userNote.keys() :
+      pywikibot.output(u">>> notifying user \03{lightpurple}%s{default} <<<" % key)
+
       page = pywikibot.Page(self.site, "User talk:" + key )
 
       if page.exists() :
